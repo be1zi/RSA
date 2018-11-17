@@ -33,7 +33,7 @@ public class RSA {
         p = createRandomBigInteger();
         q = createRandomBigInteger();
         n = p.multiply(q);
-        fi = p.subtract(BigInteger.ONE).multiply( q.subtract(BigInteger.ONE));
+        fi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
         e = createEValue();
         d = createDValue();
     }
@@ -60,6 +60,10 @@ public class RSA {
 
     private BigInteger createEValue () {
         BigInteger e = createRandomBigInteger();
+
+        if (e.compareTo(q) >= 0) {
+            return createEValue();
+        }
 
         if (e.gcd(p).intValue() != 1) {
             return createEValue();
