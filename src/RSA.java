@@ -1,7 +1,11 @@
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import javax.imageio.ImageIO;
 
 public class RSA {
@@ -13,7 +17,8 @@ public class RSA {
 
     private BigInteger p,q,n, fi,e, d;
     private String imgPath;
-    BufferedImage img = null;
+    private BufferedImage img = null;
+    private List<BigInteger> blocksList;
 
     public RSA(String imgPath) {
         this.imgPath = imgPath;
@@ -36,7 +41,10 @@ public class RSA {
         fi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
         e = createEValue();
         d = createDValue();
+        blocksList = createBlocksList();
     }
+
+    // FILE
 
     private boolean loadFile() {
         try {
@@ -50,6 +58,50 @@ public class RSA {
         return true;
     }
 
+    private List<BigInteger> createBlocksList() {
+        List<BigInteger> list = new ArrayList<>();
+        byte[] byteArray = createByteArrayForImage();
+        BigInteger bigInteger = BigInteger.ZERO;
+
+        if (byteArray.length == 0) {
+            return null;
+        }
+
+        for (byte singleByte : byteArray) {
+            BigInteger newValue = bigInteger.add(new BigInteger(String.valueOf(singleByte & 0xff)));
+
+            if (newValue.compareTo(n) >= 0) {
+                list.add(bigInteger);
+                bigInteger = BigInteger.ZERO;
+                bigInteger =  bigInteger.add(new BigInteger(String.valueOf(singleByte & 0xff)));
+            } else {
+                bigInteger = newValue;
+            }
+        }
+
+        list.add(bigInteger);
+
+        return list;
+    }
+
+    private byte[] createByteArrayForImage() {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] result = null;
+
+        try {
+            ImageIO.write(img, "jpg", baos);
+            baos.flush();
+            result = baos.toByteArray();
+            baos.close();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+
+        return result;
+    }
+
+    // Parameters needed to encrypt and decrypt
 
     private BigInteger createRandomBigInteger () {
         SecureRandom random = new SecureRandom();
@@ -77,4 +129,6 @@ public class RSA {
 
         return d;
     }
+
+    // Encrypt and Decrypt
 }
