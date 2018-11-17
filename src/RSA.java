@@ -12,7 +12,9 @@ public class RSA {
 
     public static void main(String[] args) {
 
-        new RSA();
+       RSA rsa = new RSA();
+       List<BigInteger> encryptedImage = rsa.encryptImage();
+       List<BigInteger> decryptedImage = rsa.decryptImage(encryptedImage);
     }
 
     private BigInteger p,q,n, fi,e, d;
@@ -113,11 +115,11 @@ public class RSA {
     private BigInteger createEValue () {
         BigInteger e = createRandomBigInteger();
 
-        if (e.compareTo(q) >= 0) {
+        if (e.compareTo(fi) >= 0) {
             return createEValue();
         }
 
-        if (e.gcd(p).intValue() != 1) {
+        if (e.gcd(fi).intValue() != 1) {
             return createEValue();
         }
 
@@ -125,10 +127,30 @@ public class RSA {
     }
 
     private BigInteger createDValue () {
-        BigInteger d = e.modInverse(q);
+        BigInteger d = e.modInverse(fi);
 
         return d;
     }
 
     // Encrypt and Decrypt
+
+    public List<BigInteger> encryptImage() {
+        List<BigInteger> result = new ArrayList<>();
+
+        for (BigInteger bi : blocksList) {
+            result.add(bi.modPow(e, n));
+        }
+
+        return result;
+    }
+
+    public List<BigInteger> decryptImage (List<BigInteger> encryptedImage) {
+        List<BigInteger> result = new ArrayList<>();
+
+        for (BigInteger bi : encryptedImage) {
+            result.add(bi.modPow(d, n));
+        }
+
+        return result;
+    }
 }
