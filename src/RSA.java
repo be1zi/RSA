@@ -1,12 +1,17 @@
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import javax.imageio.ImageIO;
+
+enum RSAOperationsType{
+    RSAEncrypt,
+        RSADecrypt
+};
 
 public class RSA {
 
@@ -15,16 +20,23 @@ public class RSA {
        RSA rsa = new RSA();
 
        List<BigInteger> encryptedImage = rsa.encryptImage();
-       rsa.createImage(encryptedImage, "encrypted");
+       rsa.createImage(RSAOperationsType.RSAEncrypt, encryptedImage, "encrypted");
 
        List<BigInteger> decryptedImage = rsa.decryptImage(encryptedImage);
-       rsa.createImage(decryptedImage, "decrypted");
+       rsa.createImage(RSAOperationsType.RSADecrypt, decryptedImage, "decrypted");
+
+       System.out.println(rsa.compareImages());
+
     }
 
     private BigInteger p,q,n, fi,e, d;
     private String imgPath;
     private BufferedImage img = null;
     private List<BigInteger> blocksList;
+    private static String format = "jpg";
+    private byte[] imgBytes = null;
+    private byte[] encryptedImgBytes = null;
+
 
     public RSA(String imgPath) {
         this.imgPath = imgPath;
@@ -32,7 +44,7 @@ public class RSA {
     }
 
     public RSA () {
-        this("rsa.jpg");
+        this("Pikachu.jpg");
     }
 
     private void mainFunction() {
@@ -42,23 +54,12 @@ public class RSA {
         }
 
         p = createRandomBigIntegerWithLength(1024);
-        System.out.println("P:  " + p);
-
         q = createRandomBigIntegerWithLength(1024);
-        System.out.println("Q:  " + q);
-
         n = p.multiply(q);
-        System.out.println("N:  " + n);
-
         fi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
-        System.out.println("Fi: " + fi);
-
         e = createEValue();
-        System.out.println("E:  " + e);
-
         d = createDValue();
-        System.out.println("D:  " + d);
-
+        imgBytes = createByteArrayForImage();
         blocksList = createBlocksList();
     }
 
@@ -78,18 +79,20 @@ public class RSA {
 
     private List<BigInteger> createBlocksList() {
         List<BigInteger> list = new ArrayList<>();
-        byte[] byteArray = createByteArrayForImage();
-        byte[] tmpArray = new byte[255];
+        byte[] tmpArray;
 
-        if (byteArray.length == 0) {
+        if (imgBytes.length == 0) {
             return null;
         }
 
-        for (int i = 0; i<byteArray.length; i+=255) {
-            int length = Math.min(255, byteArray.length - i);
-            System.arraycopy(byteArray, i, tmpArray, 0, length);
+        for (int i = 0; i<imgBytes.length; i+=255) {
+            int length = Math.min(255, imgBytes.length - i);
+            tmpArray = new byte[length];
+            System.arraycopy(imgBytes, i, tmpArray, 0, length);
             list.add(new BigInteger(1, tmpArray));
         }
+
+        System.out.println("Blocks number: " + list.size() + " Last item size: " + list.get(list.size() - 1).toByteArray().length);
 
         return list;
     }
@@ -100,7 +103,7 @@ public class RSA {
         byte[] result = null;
 
         try {
-            ImageIO.write(img, "jpg", baos);
+            ImageIO.write(img, format, baos);
             baos.flush();
             result = baos.toByteArray();
             baos.close();
@@ -108,11 +111,21 @@ public class RSA {
             e1.printStackTrace();
         }
 
+        System.out.println("Image byte size: " + result.length);
+        System.out.println("Image " + Arrays.toString(result));
         return result;
     }
 
-    public void createImage(List<BigInteger> list, String imageName) {
+    public void createImage(RSAOperationsType type, List<BigInteger> list, String imageName) {
         byte[] bytes = changeBigIntegersIntoBytes(list);
+
+        if (type == RSAOperationsType.RSAEncrypt) {
+            encryptedImgBytes = bytes;
+        }
+
+        System.out.println("Image " + imageName + " size: " + bytes.length);
+        System.out.println("Image " + imageName + " bytes: " + Arrays.toString(bytes));
+
         BufferedImage bi = null;
 
         if (bytes.length == 0) {
@@ -127,10 +140,10 @@ public class RSA {
         }
 
         if (bi != null) {
-            File file = new File(imageName + ".jpg");
+            File file = new File(imageName + "." + format);
             try {
-                ImageIO.write(bi, "jpg", file);
-                System.out.println("Image " + imageName + ".jpg" + " was successfully created.");
+                ImageIO.write(bi, format, file);
+                System.out.println("Image " + imageName + "." + format + " was successfully created.");
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
@@ -190,9 +203,10 @@ public class RSA {
         return result;
     }
 
+    //Helpers
+
     private byte[] changeBigIntegersIntoBytes (List<BigInteger> list) {
         byte[] result = new byte[0];
-
 
         for (BigInteger bi : list) {
             byte[] array = bi.toByteArray();
@@ -204,10 +218,23 @@ public class RSA {
             }
 
             byte[] tmpArray = new byte[result.length + array.length];
+            System.arraycopy(result, 0, tmpArray, 0, result.length);
             System.arraycopy(array, 0, tmpArray, result.length, array.length);
             result = tmpArray;
         }
 
         return result;
+    }
+
+    private boolean compareArrays(byte[] image1, byte[] imabe2) {
+        return Arrays.equals(image1, imabe2);
+    }
+
+    public String compareImages() {
+        if (compareArrays(imgBytes, encryptedImgBytes)) {
+            return "Images are the same";
+        } else {
+            return "Images arent the same";
+        }
     }
 }
