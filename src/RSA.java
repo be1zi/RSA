@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import javax.imageio.ImageIO;
 
 public class RSA {
@@ -40,12 +41,24 @@ public class RSA {
             return;
         }
 
-        p = createRandomBigInteger();
-        q = createRandomBigInteger();
+        p = createRandomBigIntegerWithLength(1024);
+        System.out.println("P:  " + p);
+
+        q = createRandomBigIntegerWithLength(1024);
+        System.out.println("Q:  " + q);
+
         n = p.multiply(q);
+        System.out.println("N:  " + n);
+
         fi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
+        System.out.println("Fi: " + fi);
+
         e = createEValue();
+        System.out.println("E:  " + e);
+
         d = createDValue();
+        System.out.println("D:  " + d);
+
         blocksList = createBlocksList();
     }
 
@@ -66,25 +79,17 @@ public class RSA {
     private List<BigInteger> createBlocksList() {
         List<BigInteger> list = new ArrayList<>();
         byte[] byteArray = createByteArrayForImage();
-        BigInteger bigInteger = BigInteger.ZERO;
+        byte[] tmpArray = new byte[255];
 
         if (byteArray.length == 0) {
             return null;
         }
 
-        for (byte singleByte : byteArray) {
-            BigInteger newValue = bigInteger.add(new BigInteger(String.valueOf(singleByte)));
-
-            if (newValue.compareTo(n) >= 0) {
-                list.add(bigInteger);
-                bigInteger = BigInteger.ZERO;
-                bigInteger =  bigInteger.add(new BigInteger(String.valueOf(singleByte)));
-            } else {
-                bigInteger = newValue;
-            }
+        for (int i = 0; i<byteArray.length; i+=255) {
+            int length = Math.min(255, byteArray.length - i);
+            System.arraycopy(byteArray, i, tmpArray, 0, length);
+            list.add(new BigInteger(1, tmpArray));
         }
-
-        list.add(bigInteger);
 
         return list;
     }
@@ -134,15 +139,17 @@ public class RSA {
 
     // Parameters needed to encrypt and decrypt
 
-    private BigInteger createRandomBigInteger () {
+    private BigInteger createRandomBigIntegerWithLength (int length) {
         SecureRandom random = new SecureRandom();
-        BigInteger number = BigInteger.probablePrime(1024, random);
+        BigInteger number = BigInteger.probablePrime(length, random);
 
         return number;
     }
 
     private BigInteger createEValue () {
-        BigInteger e = createRandomBigInteger();
+
+        Random r = new Random();
+        BigInteger e = createRandomBigIntegerWithLength(r.nextInt(1023) + 1);
 
         if (e.compareTo(fi) >= 0) {
             return createEValue();
