@@ -1,7 +1,8 @@
 # RSA
 A class used to encrypt and decrypt images with the RSA cipher
 
-##
+---
+
 **Usage**
 
 To init RSA algorithm create RSA object. As a parameter you can set:  
