@@ -3,15 +3,9 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import javax.imageio.ImageIO;
-
-enum RSAOperationsType{
-    RSAEncrypt,
-        RSADecrypt
-};
 
 public class RSA {
 
@@ -20,34 +14,35 @@ public class RSA {
        RSA rsa = new RSA();
 
        List<BigInteger> encryptedImage = rsa.encryptImage();
-       rsa.createImage(RSAOperationsType.RSAEncrypt, encryptedImage, "encrypted");
-
        List<BigInteger> decryptedImage = rsa.decryptImage(encryptedImage);
-       rsa.createImage(RSAOperationsType.RSADecrypt, decryptedImage, "decrypted");
 
-       System.out.println(rsa.compareImages());
-
+       rsa.createImage(decryptedImage, "decrypted");
     }
 
-    private BigInteger p,q,n, fi,e, d;
+    private BigInteger p, q, n, fi, e, d;
     private String imgPath;
     private BufferedImage img = null;
     private List<BigInteger> blocksList;
-    private static String format = "jpg";
+    private String format;
     private byte[] imgBytes = null;
-    private byte[] encryptedImgBytes = null;
 
+    public RSA () {
+        this("Pikachu.jpg", "jpg");
+    }
 
     public RSA(String imgPath) {
+        this(imgPath, "jpg");
+    }
+
+    public RSA(String imgPath, String imgFormat) {
         this.imgPath = imgPath;
+        this.format = imgFormat;
         this.mainFunction();
     }
 
-    public RSA () {
-        this("Pikachu.jpg");
-    }
-
     private void mainFunction() {
+
+        System.out.println("\nData is being prepared");
 
         if (!loadFile()) {
             return;
@@ -61,6 +56,9 @@ public class RSA {
         d = createDValue();
         imgBytes = createByteArrayForImage();
         blocksList = createBlocksList();
+
+        System.out.println("Data was correctly prepared");
+
     }
 
     // FILE
@@ -92,8 +90,6 @@ public class RSA {
             list.add(new BigInteger(1, tmpArray));
         }
 
-        System.out.println("Blocks number: " + list.size() + " Last item size: " + list.get(list.size() - 1).toByteArray().length);
-
         return list;
     }
 
@@ -111,20 +107,11 @@ public class RSA {
             e1.printStackTrace();
         }
 
-        System.out.println("Image byte size: " + result.length);
-        System.out.println("Image " + Arrays.toString(result));
         return result;
     }
 
-    public void createImage(RSAOperationsType type, List<BigInteger> list, String imageName) {
+    public void createImage(List<BigInteger> list, String imageName) {
         byte[] bytes = changeBigIntegersIntoBytes(list);
-
-        if (type == RSAOperationsType.RSAEncrypt) {
-            encryptedImgBytes = bytes;
-        }
-
-        System.out.println("Image " + imageName + " size: " + bytes.length);
-        System.out.println("Image " + imageName + " bytes: " + Arrays.toString(bytes));
 
         BufferedImage bi = null;
 
@@ -184,6 +171,8 @@ public class RSA {
     // Encrypt and Decrypt
 
     public List<BigInteger> encryptImage() {
+        System.out.println("Encryption started");
+
         List<BigInteger> result = new ArrayList<>();
 
         for (BigInteger bi : blocksList) {
@@ -194,6 +183,8 @@ public class RSA {
     }
 
     public List<BigInteger> decryptImage (List<BigInteger> encryptedImage) {
+        System.out.println("Decryption started");
+
         List<BigInteger> result = new ArrayList<>();
 
         for (BigInteger bi : encryptedImage) {
@@ -211,7 +202,7 @@ public class RSA {
         for (BigInteger bi : list) {
             byte[] array = bi.toByteArray();
 
-            if (array[0] == 0) {
+            if (array.length != 255 && array[0] == 0) {
                 byte[] tmp = new byte[array.length - 1];
                 System.arraycopy(array, 1, tmp, 0, tmp.length);
                 array = tmp;
@@ -224,17 +215,5 @@ public class RSA {
         }
 
         return result;
-    }
-
-    private boolean compareArrays(byte[] image1, byte[] imabe2) {
-        return Arrays.equals(image1, imabe2);
-    }
-
-    public String compareImages() {
-        if (compareArrays(imgBytes, encryptedImgBytes)) {
-            return "Images are the same";
-        } else {
-            return "Images arent the same";
-        }
     }
 }
